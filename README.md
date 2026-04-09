@@ -6,20 +6,6 @@ Issues short-lived tokens, renews them atomically near expiry, and enforces acce
 
 ## ⚙️ Setup
 
-**Local setup**
-```bash
-psql -U postgres -f db/run_all.sql
-cp .env.example .env
-cargo run
-```
-
-**Tests**
-Integration tests rely on the seeded `api_auth` DB from `db/run_all.sql`.
-Default server: `http://127.0.0.1:7878`
-
-```bash
-cargo test --test api_test
-```
 
 **Environment:**
 
@@ -27,6 +13,35 @@ Copy and modify.
 
 ```
 cp ./.env-example ./.env
+```
+
+
+**Database + user setup**
+- Set `AUTH_DATABASE_URL` in `.env` (used by `db/run_all.sql` to grant schema access).
+- Run the script as the `postgres` superuser; it creates/recreates the `api_auth` DB and applies grants.
+
+Example `AUTH_DATABASE_URL`:
+```
+AUTH_DATABASE_URL=postgres://myuser:thepassword@localhost/api_auth
+```
+
+
+**Local setup**
+```bash
+cp .env.example .env
+set -a; . ./.env; set +a
+sudo --preserve-env=AUTH_DATABASE_URL -u postgres psql -f db/run_all.sql
+cargo run
+```
+
+
+**Tests**
+
+Integration tests rely on the seeded `api_auth` DB from `db/run_all.sql`.
+Default server: `http://127.0.0.1:7878`
+
+```bash
+cargo test
 ```
 
 Data reference: see `./db/DB.md` (seeded dataset: IDs, users, services, roles, permissions).
