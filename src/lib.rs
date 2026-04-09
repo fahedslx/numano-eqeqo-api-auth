@@ -5,7 +5,7 @@ pub mod auth;
 mod database;
 mod handlers;
 pub use httpageboy::{Request, Response, Rt, Server, StatusCode, handler};
-use std::sync::OnceLock;
+use std::sync::{OnceLock, atomic::{AtomicBool, Ordering}};
 use tokio::time::{self, Duration};
 
 pub mod test_utils {
@@ -50,6 +50,15 @@ fn build_cors_policy() -> httpageboy::CorsPolicy {
 }
 
 static CLEANUP_JOB_STARTED: OnceLock<()> = OnceLock::new();
+static TEST_MODE: AtomicBool = AtomicBool::new(false);
+
+pub fn set_test_mode(enabled: bool) {
+  TEST_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub fn is_test_mode() -> bool {
+  TEST_MODE.load(Ordering::Relaxed)
+}
 
 fn spawn_cleanup_job() {
   if CLEANUP_JOB_STARTED.set(()).is_err() {

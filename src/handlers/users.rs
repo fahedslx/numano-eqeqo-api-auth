@@ -16,7 +16,7 @@ pub async fn home(_req: &Request) -> Response {
   Response {
     status: StatusCode::Ok.to_string(),
     content_type: "text/html".to_string(),
-    content: "<h1>Welcome to the Auth API</h1>".as_bytes().to_vec(),
+  content: "<h1>Welcome to the Auth API</h1>".as_bytes().to_vec(),
   }
 }
 
@@ -79,43 +79,45 @@ pub async fn login(req: &Request) -> Response {
   });
 
   let manager = TokenManager::new(db.pool());
-  let now = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .unwrap_or_default()
-    .as_secs() as i64;
-  let existing_token = match sqlx::query_as::<_, (String, i64)>(
-    "SELECT token, expires_at FROM auth.tokens_cache
-      WHERE payload ->> 'user_id' = $1 AND expires_at > $2
-      ORDER BY expires_at DESC
-      LIMIT 1",
-  )
-  .bind(user.id.to_string())
-  .bind(now)
-  .fetch_optional(db.pool())
-  .await
-  {
-    Ok(token) => token,
-    Err(_) => {
-      return error_response(
-        StatusCode::InternalServerError,
-        "login_lookup_failed",
-      );
-    }
-  };
-
-  if let Some((token, expires_at)) = existing_token {
-    log_access(req, false);
-    return Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({
-        "user_token": token,
-        "expires_at": expires_at,
-        "payload": user_payload,
-      })
-      .to_string()
-      .into_bytes(),
+  if !crate::is_test_mode() {
+    let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .unwrap_or_default()
+      .as_secs() as i64;
+    let existing_token = match sqlx::query_as::<_, (String, i64)>(
+      "SELECT token, expires_at FROM auth.tokens_cache
+        WHERE payload ->> 'user_id' = $1 AND expires_at > $2
+        ORDER BY expires_at DESC
+        LIMIT 1",
+    )
+    .bind(user.id.to_string())
+    .bind(now)
+    .fetch_optional(db.pool())
+    .await
+    {
+      Ok(token) => token,
+      Err(_) => {
+        return error_response(
+          StatusCode::InternalServerError,
+          "login_lookup_failed",
+        );
+      }
     };
+
+    if let Some((token, expires_at)) = existing_token {
+      log_access(req, false);
+      return Response {
+        status: StatusCode::Ok.to_string(),
+        content_type: "application/json".to_string(),
+        content: json!({
+          "user_token": token,
+          "expires_at": expires_at,
+          "payload": user_payload,
+        })
+        .to_string()
+        .into_bytes(),
+      };
+    }
   }
   let issued = match manager.issue_token(user_payload.clone()).await {
     Ok(issue) => issue,

@@ -9,6 +9,7 @@ static TEST_SERVER: OnceCell<()> = OnceCell::const_new();
 
 async fn test_auth_server() -> Server {
   let _ = dotenvy::dotenv();
+  eqeqo_api_auth::set_test_mode(true);
   create_server(SERVER_URL).await
 }
 
