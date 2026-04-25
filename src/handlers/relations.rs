@@ -1,3 +1,4 @@
+use crate::responses::{json_response, json_response_value};
 use httpageboy::{Request, Response, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
@@ -45,11 +46,7 @@ pub async fn assign_role_to_service(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "success" }).to_string().into_bytes(),
-      }
+      json_response_value(StatusCode::Ok, json!({ "status": "success" }))
     }
     Err(_) => error_response(
       StatusCode::InternalServerError,
@@ -85,13 +82,7 @@ pub async fn remove_role_from_service(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "role_removed_from_service" })
-          .to_string()
-          .into_bytes(),
-      }
+      json_response_value(StatusCode::Ok, json!({ "status": "role_removed_from_service" }))
     }
     Err(_) => error_response(
       StatusCode::InternalServerError,
@@ -118,11 +109,7 @@ pub async fn list_service_roles(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(roles) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&roles).unwrap(),
-    },
+    Ok(roles) => json_response(StatusCode::Ok, &roles),
     Err(_) => error_response(StatusCode::InternalServerError, "list_service_roles_failed"),
   }
 }
@@ -166,11 +153,7 @@ pub async fn assign_role_to_person_in_service(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "success" }).to_string().into_bytes(),
-      }
+      json_response_value(StatusCode::Ok, json!({ "status": "success" }))
     }
     Err(_) => error_response(StatusCode::InternalServerError, "assign_role_person_failed"),
   }
@@ -208,13 +191,7 @@ pub async fn remove_role_from_person_in_service(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "role_removed_from_person" })
-          .to_string()
-          .into_bytes(),
-      }
+      json_response_value(StatusCode::Ok, json!({ "status": "role_removed_from_person" }))
     }
     Err(_) => error_response(StatusCode::InternalServerError, "remove_role_person_failed"),
   }
@@ -247,11 +224,7 @@ pub async fn list_person_roles_in_service(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(roles) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&roles).unwrap(),
-    },
+    Ok(roles) => json_response(StatusCode::Ok, &roles),
     Err(_) => error_response(StatusCode::InternalServerError, "list_person_roles_failed"),
   }
 }
@@ -281,11 +254,7 @@ pub async fn list_persons_with_role_in_service(req: &Request) -> Response {
   .fetch_all(db.pool())
   .await
   {
-    Ok(users) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&users).unwrap(),
-    },
+    Ok(users) => json_response(StatusCode::Ok, &users),
     Err(_) => error_response(
       StatusCode::InternalServerError,
       "list_persons_with_role_failed",
@@ -430,19 +399,16 @@ pub async fn grant_permission_to_person_in_service(req: &Request) -> Response {
     );
   }
 
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({
+  json_response_value(
+    StatusCode::Ok,
+    json!({
       "status": "permission_granted",
       "person_id": person_id,
       "service_id": service_id,
       "permission_id": permission_id,
       "role_id": role_id
-    })
-    .to_string()
-    .into_bytes(),
-  }
+    }),
+  )
 }
 
 #[derive(sqlx::FromRow, serde::Serialize)]
@@ -554,16 +520,13 @@ pub async fn get_person_service_info(req: &Request) -> Response {
 
   log_access(req, used_cache);
 
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({
+  json_response_value(
+    StatusCode::Ok,
+    json!({
       "user": person,
       "service_id": service_id,
       "roles": roles,
       "permissions": permissions,
-    })
-    .to_string()
-    .into_bytes(),
-  }
+    }),
+  )
 }

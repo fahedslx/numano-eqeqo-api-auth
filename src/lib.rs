@@ -4,6 +4,7 @@ use crate::handlers::*;
 pub mod auth;
 mod database;
 mod handlers;
+mod responses;
 pub use httpageboy::{Request, Response, Rt, Server, StatusCode, handler};
 use std::sync::{OnceLock, atomic::{AtomicBool, Ordering}};
 use tokio::time::{self, Duration};

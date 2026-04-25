@@ -1,4 +1,5 @@
 use crate::auth::TokenManager;
+use crate::responses::{json_response, json_response_value};
 use httpageboy::{Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -31,11 +32,7 @@ pub async fn create_permission(req: &Request) -> Response {
     .fetch_one(db.pool())
     .await
   {
-    Ok(permission) => Response {
-      status: StatusCode::Created.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&permission).unwrap(),
-    },
+    Ok(permission) => json_response(StatusCode::Created, &permission),
     Err(err) => {
       eprintln!("[handler-error] create_permission: {}", err);
       error_response(StatusCode::InternalServerError, "create_permission_failed")
@@ -52,11 +49,7 @@ pub async fn list_permissions(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(permissions) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&permissions).unwrap(),
-    },
+    Ok(permissions) => json_response(StatusCode::Ok, &permissions),
     Err(_) => error_response(StatusCode::InternalServerError, "list_permissions_failed"),
   }
 }
@@ -86,11 +79,7 @@ pub async fn update_permission(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "success" }).to_string().into_bytes(),
-    },
+    Ok(_) => json_response_value(StatusCode::Ok, json!({ "status": "success" })),
     Err(err) => {
       eprintln!("[handler-error] update_permission: {}", err);
       error_response(StatusCode::InternalServerError, "update_permission_failed")
@@ -112,13 +101,10 @@ pub async fn delete_permission(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "permission_deleted", "permission_id": id })
-        .to_string()
-        .into_bytes(),
-    },
+    Ok(_) => json_response_value(
+      StatusCode::Ok,
+      json!({ "status": "permission_deleted", "permission_id": id }),
+    ),
     Err(_) => error_response(StatusCode::InternalServerError, "delete_permission_failed"),
   }
 }
@@ -152,11 +138,7 @@ pub async fn assign_permission_to_role(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "success" }).to_string().into_bytes(),
-      }
+      json_response_value(StatusCode::Ok, json!({ "status": "success" }))
     }
     Err(_) => error_response(StatusCode::InternalServerError, "assign_permission_failed"),
   }
@@ -185,17 +167,14 @@ pub async fn remove_permission_from_role(req: &Request) -> Response {
           "invalidate_access_cache_failed",
         );
       }
-      Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({
+      json_response_value(
+        StatusCode::Ok,
+        json!({
           "status": "permission_removed_from_role",
           "role_id": payload.role_id,
           "permission_id": payload.permission_id
-        })
-        .to_string()
-        .into_bytes(),
-      }
+        }),
+      )
     }
     Err(_) => error_response(StatusCode::InternalServerError, "remove_permission_failed"),
   }
@@ -215,11 +194,7 @@ pub async fn list_role_permissions(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(permissions) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&permissions).unwrap(),
-    },
+    Ok(permissions) => json_response(StatusCode::Ok, &permissions),
     Err(_) => error_response(
       StatusCode::InternalServerError,
       "list_role_permissions_failed",

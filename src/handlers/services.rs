@@ -1,4 +1,5 @@
 use crate::auth::TokenManager;
+use crate::responses::{json_response, json_response_value};
 use httpageboy::{Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -64,11 +65,7 @@ pub async fn create_service(req: &Request) -> Response {
     .fetch_one(db.pool())
     .await
   {
-    Ok(service) => Response {
-      status: StatusCode::Created.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&service).unwrap(),
-    },
+    Ok(service) => json_response(StatusCode::Created, &service),
     Err(_) => error_response(StatusCode::InternalServerError, "create_service_failed"),
   }
 }
@@ -82,11 +79,7 @@ pub async fn list_services(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(services) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&services).unwrap(),
-    },
+    Ok(services) => json_response(StatusCode::Ok, &services),
     Err(_) => error_response(StatusCode::InternalServerError, "list_services_failed"),
   }
 }
@@ -117,11 +110,7 @@ pub async fn update_service(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "success" }).to_string().into_bytes(),
-    },
+    Ok(_) => json_response_value(StatusCode::Ok, json!({ "status": "success" })),
     Err(_) => error_response(StatusCode::InternalServerError, "update_service_failed"),
   }
 }
@@ -140,13 +129,10 @@ pub async fn delete_service(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "service_deleted", "service_id": id })
-        .to_string()
-        .into_bytes(),
-    },
+    Ok(_) => json_response_value(
+      StatusCode::Ok,
+      json!({ "status": "service_deleted", "service_id": id }),
+    ),
     Err(_) => error_response(StatusCode::InternalServerError, "delete_service_failed"),
   }
 }
@@ -195,18 +181,15 @@ pub async fn issue_service_token(req: &Request) -> Response {
     }
   };
 
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({
+  json_response_value(
+    StatusCode::Ok,
+    json!({
       "service_id": service.id,
       "service_name": service.name,
       "service_token": issued.token,
       "expires_at": issued.expires_at,
-    })
-    .to_string()
-    .into_bytes(),
-  }
+    }),
+  )
 }
 
 pub async fn list_services_of_person(req: &Request) -> Response {
@@ -225,11 +208,7 @@ pub async fn list_services_of_person(req: &Request) -> Response {
   .fetch_all(db.pool())
   .await
   {
-    Ok(services) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&services).unwrap(),
-    },
+    Ok(services) => json_response(StatusCode::Ok, &services),
     Err(_) => error_response(
       StatusCode::InternalServerError,
       "list_person_services_failed",

@@ -1,5 +1,6 @@
 use crate::auth::{TokenError, TokenManager, TokenValidation};
 use crate::database::DB;
+use crate::responses::json_response_value;
 use httpageboy::{Request, Response, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
@@ -8,11 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 // Generic response for errors
 pub(super) fn error_response(status_code: StatusCode, message: &str) -> Response {
-  Response {
-    status: status_code.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({ "error": message }).to_string().into_bytes(),
-  }
+  json_response_value(status_code, json!({ "error": message }))
 }
 
 pub(super) fn error_response_with_detail(
@@ -20,13 +17,7 @@ pub(super) fn error_response_with_detail(
   message: &str,
   detail: &str,
 ) -> Response {
-  Response {
-    status: status_code.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({ "error": message, "detail": detail })
-      .to_string()
-      .into_bytes(),
-  }
+  json_response_value(status_code, json!({ "error": message, "detail": detail }))
 }
 
 fn extract_header(req: &Request, name: &str) -> Option<String> {

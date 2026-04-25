@@ -14,6 +14,10 @@ keywords = ["authentication", "authorization", "api", "users", "roles"]
 name = "eqeqo_api_auth"
 path = "src/lib.rs"
 
+[[bin]]
+name = "api-auth"
+path = "src/main.rs"
+
 [dependencies]
 dotenvy = "0.15"
 httpageboy = { version = "1.0.16", features = ["async_tokio"] }

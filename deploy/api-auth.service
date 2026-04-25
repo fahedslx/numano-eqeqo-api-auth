@@ -1,0 +1,26 @@
+[Unit]
+Description=Eqeqo Auth API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fedora
+Group=fedora
+WorkingDirectory=/home/fedora/dev/api-auth
+EnvironmentFile=/home/fedora/dev/api-auth/.env
+Environment=SERVER_URL=127.0.0.1:7878
+ExecStart=/home/fedora/dev/api-auth/target/release/api-auth
+Restart=always
+RestartSec=3
+TimeoutStopSec=10
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/home/fedora/dev/api-auth
+
+[Install]
+WantedBy=multi-user.target

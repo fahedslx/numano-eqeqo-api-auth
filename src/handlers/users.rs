@@ -1,4 +1,5 @@
 use crate::auth::TokenManager;
+use crate::responses::{json_response, json_response_value, response_with_body};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use httpageboy::{Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -13,11 +14,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 // Basic endpoints
 pub async fn home(_req: &Request) -> Response {
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "text/html".to_string(),
-  content: "<h1>Welcome to the Auth API</h1>".as_bytes().to_vec(),
-  }
+  response_with_body(
+    StatusCode::Ok,
+    "text/html",
+    "<h1>Welcome to the Auth API</h1>".as_bytes().to_vec(),
+  )
 }
 
 #[derive(Deserialize)]
@@ -106,17 +107,14 @@ pub async fn login(req: &Request) -> Response {
 
     if let Some((token, expires_at)) = existing_token {
       log_access(req, false);
-      return Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({
+      return json_response_value(
+        StatusCode::Ok,
+        json!({
           "user_token": token,
           "expires_at": expires_at,
           "payload": user_payload,
-        })
-        .to_string()
-        .into_bytes(),
-      };
+        }),
+      );
     }
   }
   let issued = match manager.issue_token(user_payload.clone()).await {
@@ -128,28 +126,21 @@ pub async fn login(req: &Request) -> Response {
 
   log_access(req, false);
 
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({
+  json_response_value(
+    StatusCode::Ok,
+    json!({
       "user_token": issued.token,
       "expires_at": issued.expires_at,
       "payload": user_payload,
-    })
-    .to_string()
-    .into_bytes(),
-  }
+    }),
+  )
 }
 
 pub async fn logout(req: &Request) -> Response {
   with_auth_no_renew(req, |_req, db, _, token| async move {
     let manager = TokenManager::new(db.pool());
     match manager.delete_token(&token).await {
-      Ok(_) => Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({ "status": "logged_out" }).to_string().into_bytes(),
-      },
+      Ok(_) => json_response_value(StatusCode::Ok, json!({ "status": "logged_out" })),
       Err(_) => error_response(StatusCode::InternalServerError, "logout_failed"),
     }
   })
@@ -159,17 +150,14 @@ pub async fn logout(req: &Request) -> Response {
 pub async fn profile(req: &Request) -> Response {
   with_auth(req, true, |_req, _db, validation, _token| async move {
     let payload = validation.record.payload.clone();
-    Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({
+    json_response_value(
+      StatusCode::Ok,
+      json!({
         "payload": payload,
         "renewed": validation.renewed,
         "expires_at": validation.expires_at,
-      })
-      .to_string()
-      .into_bytes(),
-    }
+      }),
+    )
   })
   .await
 }
@@ -314,18 +302,15 @@ pub async fn check_permission(req: &Request) -> Response {
 
   log_access(req, used_cache);
 
-  Response {
-    status: StatusCode::Ok.to_string(),
-    content_type: "application/json".to_string(),
-    content: json!({
+  json_response_value(
+    StatusCode::Ok,
+    json!({
       "valid": true,
       "access": access_json,
       "renewed": validation.renewed,
       "expires_at": validation.expires_at,
-    })
-    .to_string()
-    .into_bytes(),
-  }
+    }),
+  )
 }
 
 // User Handlers
@@ -396,11 +381,7 @@ pub async fn create_user(req: &Request) -> Response {
   .fetch_one(db.pool())
   .await
   {
-    Ok(user) => Response {
-      status: StatusCode::Created.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&user).unwrap(),
-    },
+    Ok(user) => json_response(StatusCode::Created, &user),
     Err(_) => error_response(StatusCode::InternalServerError, "create_user_failed"),
   }
 }
@@ -414,11 +395,7 @@ pub async fn list_people(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(users) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&users).unwrap(),
-    },
+    Ok(users) => json_response(StatusCode::Ok, &users),
     Err(_) => error_response(StatusCode::InternalServerError, "list_users_failed"),
   }
 }
@@ -437,11 +414,7 @@ pub async fn get_user(req: &Request) -> Response {
     .fetch_optional(db.pool())
     .await
   {
-    Ok(Some(user)) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&user).unwrap(),
-    },
+    Ok(Some(user)) => json_response(StatusCode::Ok, &user),
     Ok(None) => error_response(StatusCode::NotFound, "user_not_found"),
     Err(_) => error_response(StatusCode::InternalServerError, "get_user_failed"),
   }
@@ -484,11 +457,7 @@ pub async fn update_user(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "success" }).to_string().into_bytes(),
-    },
+    Ok(_) => json_response_value(StatusCode::Ok, json!({ "status": "success" })),
     Err(_) => error_response(StatusCode::InternalServerError, "update_user_failed"),
   }
 }
@@ -509,17 +478,14 @@ pub async fn delete_user(req: &Request) -> Response {
     .await
   {
     Ok(_) => match manager.delete_tokens_for_user(id).await {
-      Ok(revoked) => Response {
-        status: StatusCode::Ok.to_string(),
-        content_type: "application/json".to_string(),
-        content: json!({
+      Ok(revoked) => json_response_value(
+        StatusCode::Ok,
+        json!({
           "status": "user_deleted",
           "user_id": id,
           "revoked_tokens": revoked
-        })
-        .to_string()
-        .into_bytes(),
-      },
+        }),
+      ),
       Err(_) => error_response(StatusCode::InternalServerError, "user_token_cleanup_failed"),
     },
     Err(_) => error_response(StatusCode::InternalServerError, "delete_user_failed"),

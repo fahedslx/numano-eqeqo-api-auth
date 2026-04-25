@@ -1,6 +1,7 @@
 use httpageboy::{Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use crate::responses::{json_response, json_response_value};
 
 use super::{error_response, require_token_with_renew};
 
@@ -29,11 +30,7 @@ pub async fn create_role(req: &Request) -> Response {
     .fetch_one(db.pool())
     .await
   {
-    Ok(role) => Response {
-      status: StatusCode::Created.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&role).unwrap(),
-    },
+    Ok(role) => json_response(StatusCode::Created, &role),
     Err(_) => error_response(StatusCode::InternalServerError, "create_role_failed"),
   }
 }
@@ -47,11 +44,7 @@ pub async fn list_roles(req: &Request) -> Response {
     .fetch_all(db.pool())
     .await
   {
-    Ok(roles) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&roles).unwrap(),
-    },
+    Ok(roles) => json_response(StatusCode::Ok, &roles),
     Err(_) => error_response(StatusCode::InternalServerError, "list_roles_failed"),
   }
 }
@@ -70,11 +63,7 @@ pub async fn get_role(req: &Request) -> Response {
     .fetch_optional(db.pool())
     .await
   {
-    Ok(Some(role)) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: serde_json::to_vec(&role).unwrap(),
-    },
+    Ok(Some(role)) => json_response(StatusCode::Ok, &role),
     Ok(None) => error_response(StatusCode::NotFound, "role_not_found"),
     Err(_) => error_response(StatusCode::InternalServerError, "get_role_failed"),
   }
@@ -104,11 +93,7 @@ pub async fn update_role(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "success" }).to_string().into_bytes(),
-    },
+    Ok(_) => json_response_value(StatusCode::Ok, json!({ "status": "success" })),
     Err(err) => {
       eprintln!("[handler-error] update_role: {}", err);
       error_response(StatusCode::InternalServerError, "update_role_failed")
@@ -130,13 +115,10 @@ pub async fn delete_role(req: &Request) -> Response {
     .execute(db.pool())
     .await
   {
-    Ok(_) => Response {
-      status: StatusCode::Ok.to_string(),
-      content_type: "application/json".to_string(),
-      content: json!({ "status": "role_deleted", "role_id": id })
-        .to_string()
-        .into_bytes(),
-    },
+    Ok(_) => json_response_value(
+      StatusCode::Ok,
+      json!({ "status": "role_deleted", "role_id": id }),
+    ),
     Err(_) => error_response(StatusCode::InternalServerError, "delete_role_failed"),
   }
 }

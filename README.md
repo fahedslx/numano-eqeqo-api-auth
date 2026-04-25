@@ -34,6 +34,9 @@ sudo --preserve-env=AUTH_DATABASE_URL -u postgres psql -f db/run_all.sql
 cargo run
 ```
 
+**Production service**
+See [deploy/PRODUCTION.md](deploy/PRODUCTION.md) and [deploy/api-auth.service](deploy/api-auth.service) for a permanent `systemd` setup.
+
 
 **Tests**
 
