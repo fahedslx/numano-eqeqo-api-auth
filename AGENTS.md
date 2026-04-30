@@ -1,6 +1,6 @@
 # Coding Rules
 - Cross-project integration source of truth:
-- Before changing any shared auth, API contract, routing ownership, or backend integration flow across `pos`, `api-sales`, `api-stocks`, `api-money`, and `api-auth`, read `/home/fedora/dev/POS_BACKEND_ALIGNMENT.md`.
+- Before changing any shared auth, API contract, routing ownership, or backend integration flow across `pos`, `api-sales`, `api-stocks`, `api-commercial`, and `api-auth`, read `/home/fedora/dev/POS_BACKEND_ALIGNMENT.md`.
 - If local assumptions conflict with that document on cross-project architecture, follow `/home/fedora/dev/POS_BACKEND_ALIGNMENT.md` unless the user explicitly overrides it.
 
 - Use **two-space indentation**, no tabs.

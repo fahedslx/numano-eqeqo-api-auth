@@ -22,7 +22,7 @@ cp ./.env-example ./.env
 
 Example `AUTH_DATABASE_URL`:
 ```
-AUTH_DATABASE_URL=postgres://myuser:thepassword@localhost/api_auth
+AUTH_DATABASE_URL=postgres://USER:PASSWORD@localhost/api_auth
 ```
 
 
